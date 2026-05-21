@@ -305,7 +305,7 @@ function openQR(){document.getElementById('qmod').classList.add('open');}
 <!-- CHATBOT FAB -->
 <button class="chat-fab" onclick="toggleChat()" id="chatFab">
   <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-  Tanya SkyByte AI
+  Tanya CS AI
   <span class="chat-notif" id="chatNotif">1</span>
 </button>
 
@@ -337,31 +337,37 @@ function openQR(){document.getElementById('qmod').classList.add('open');}
 <script>
 // ===== CHATBOT SKYBYTE — Gemini key dari Supabase Database =====
 // Ganti ini dengan URL Supabase kamu:
-var SUPABASE_URL = 'https://hwdzqnmikxplzbyhczlw.supabase.co';
-var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3ZHpxbm1pa3hwbHpieWhjemx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDMyNTcsImV4cCI6MjA5NDI3OTI1N30.wIsAO-3bUHgTJmuDH30dOaO-1L1KJSkhLUVQzDkE4Cs'; // dari Supabase settings
+var SUPABASE_URL = 'https://PROJECT_ID.supabase.co';
+var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // dari Supabase settings
 
 var chatHistory = [];
 var GEMINI_KEY = null;
 
-// Saat load, ambil key dari Supabase
+// Saat load, ambil key dari Supabase (diam-diam, tanpa pesan ke chat)
 async function loadGeminiKey() {
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/rpc/get_gemini_key`,
-      {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON}`,
-          'Content-Type': 'application/json',
-        }
-      }
-    );
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_gemini_key`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'apikey': SUPABASE_ANON,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({})
+    });
     const data = await res.json();
-    if (data.length > 0) {
+    console.log('Supabase response:', data);
+    if (Array.isArray(data) && data.length > 0 && data[0].api_key) {
       GEMINI_KEY = data[0].api_key;
-      console.log('✓ Gemini key loaded dari Supabase');
+      console.log('✓ Gemini key berhasil dimuat');
+    } else if (data && data.api_key) {
+      GEMINI_KEY = data.api_key;
+      console.log('✓ Gemini key berhasil dimuat');
+    } else {
+      console.error('Key tidak ditemukan. Response:', JSON.stringify(data));
     }
   } catch (e) {
-    console.error('Error load key dari Supabase:', e);
+    console.error('Gagal ambil key dari Supabase:', e.message);
   }
 }
 loadGeminiKey();
@@ -394,10 +400,10 @@ async function sendMsg(override) {
   if (!text) return;
 
   if (!GEMINI_KEY) {
-    addMsg('bot', '⏳ Loading API key dari Supabase... Tunggu sebentar.');
-    await new Promise(r => setTimeout(r, 1000));
+    // Coba tunggu sebentar kalau key masih loading
+    await new Promise(r => setTimeout(r, 2000));
     if (!GEMINI_KEY) {
-      addMsg('bot', '❌ Gagal load API key. Hubungi admin.');
+      addMsg('bot', '❌ Gagal load konfigurasi. Hubungi admin via WhatsApp ya!');
       return;
     }
   }
@@ -410,7 +416,7 @@ async function sendMsg(override) {
 
   try {
     var res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
