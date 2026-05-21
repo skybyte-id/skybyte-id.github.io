@@ -1497,6 +1497,114 @@ setInterval(up,IV);up();
     card.innerHTML = '<div class="sholat-loading" style="color:#e63946">⚠️ Gagal memuat jadwal sholat</div>';
   }
 })();
+</script>
+<!-- CHATBOT FAB -->
+<button class="chat-fab" onclick="toggleChat()" id="chatFab">
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+  Tanya CS AI
+  <span class="chat-notif" id="chatNotif">1</span>
+</button>
+
+<!-- CHATBOT WINDOW -->
+<div class="chat-win" id="chatWin">
+  <div class="chat-head">
+    <div style="font-size:28px">🤖</div>
+    <div class="chat-head-info">
+      <div class="chat-head-name">SkyByte Assistant</div>
+      <div class="chat-head-sub">⚡ AI Customer Service • Online</div>
+    </div>
+    <button class="chat-close" onclick="toggleChat()">×</button>
+  </div>
+  <div class="chat-msgs" id="chatMsgs">
+    <div class="msg bot">Halo! Saya SkyBot, asisten AI SkyByte 👋<br>Ada yang bisa saya bantu tentang paket internet atau layanan kami?</div>
+  </div>
+  <div class="chat-quickbtns" id="quickBtns">
+    <button class="qbtn" onclick="sendQuick('Paket apa saja yang tersedia?')">📦 Lihat Paket</button>
+    <button class="qbtn" onclick="sendQuick('Cara daftar/berlangganan?')">📝 Cara Daftar</button>
+    <button class="qbtn" onclick="sendQuick('Cara bayar tagihan?')">💳 Cara Bayar</button>
+    <button class="qbtn" onclick="sendQuick('Internet saya lambat, apa solusinya?')">🔧 Gangguan</button>
+  </div>
+  <div id="chatInputRow" class="chat-input-row">
+    <input class="chat-input" type="text" id="chatInput" placeholder="Ketik pertanyaan..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+    <button class="chat-send" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<script>
+// ===== CHATBOT SKYBYTE — Gemini =====
+var GEMINI_KEY = 'AIzaSyCoVhgEffDP3XykjmgK0N42evBdvng8zcs';
+var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=' + GEMINI_KEY;
+
+var SYSTEM_PROMPT = `Kamu adalah SkyBot, customer service AI dari SkyByte — penyedia internet unlimited di Cilaku Babakan.
+
+Informasi layanan SkyByte:
+- Paket 50Rb/bulan: Unlimited, speed max 30 Mbps (up & down), kabel 50m + router 2.4GHz, unlimited perangkat, gratis pemasangan
+- Paket 100Rb/bulan (TERBAIK): Unlimited, speed max 70 Mbps (up & down), kabel 50m + router 2.4GHz & 5GHz, unlimited perangkat, gratis pemasangan
+- Tanpa FUP, tanpa batasan kuota, kecepatan stabil
+- Pembayaran: QRIS (scan QR di app/website)
+- Kontak CS: WhatsApp 082295750165
+- Ada aplikasi My SkyByte APK untuk monitor penggunaan
+- Area layanan: Cilaku Babakan dan sekitarnya
+
+Cara bicara: ramah, santai tapi profesional, pakai bahasa Indonesia. Jawab singkat dan jelas. Kalau ada pertanyaan di luar layanan SkyByte, arahkan ke CS WhatsApp.`;
+
+var chatHistory = [];
+
+function toggleChat() {
+  var w = document.getElementById('chatWin');
+  var notif = document.getElementById('chatNotif');
+  w.classList.toggle('open');
+  if (notif) notif.style.display = 'none';
+}
+
+function addMsg(role, text) {
+  var msgs = document.getElementById('chatMsgs');
+  var div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = text.replace(/\n/g,'<br>');
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function sendQuick(text) {
+  document.getElementById('quickBtns').style.display = 'none';
+  sendMsg(text);
+}
+
+async function sendMsg(override) {
+  var input = document.getElementById('chatInput');
+  var text = override || input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addMsg('user', text);
+  chatHistory.push({ role: 'user', parts: [{ text: text }] });
+
+  var typing = addMsg('bot typing', '⏳ SkyBot sedang mengetik...');
+
+  try {
+    var res = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: chatHistory
+      })
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    var reply = data.candidates[0].content.parts[0].text;
+    chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+    typing.className = 'msg bot';
+    typing.innerHTML = reply.replace(/\n/g,'<br>');
+  } catch(e) {
+    typing.className = 'msg bot';
+    typing.innerHTML = '⚠️ Gagal terhubung ke AI. Hubungi CS via WhatsApp ya!';
+    console.error(e);
+  }
+  document.getElementById('chatMsgs').scrollTop = 9999;
+}
+</script>
 
 </script>
 </body>
