@@ -1559,42 +1559,20 @@ setInterval(up,IV);up();
 </div>
 
 <script>
-// ===== CHATBOT SKYBYTE — Gemini key dari Supabase Database =====
-// Ganti ini dengan URL Supabase kamu:
-var SUPABASE_URL = 'https://hwdzqnmikxplzbyhczlw.supabase.co';
-var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3ZHpxbm1pa3hwbHpieWhjemx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDMyNTcsImV4cCI6MjA5NDI3OTI1N30.wIsAO-3bUHgTJmuDH30dOaO-1L1KJSkhLUVQzDkE4Cs'; // dari Supabase settings
-
+// ===== CHATBOT SKYBYTE — api.ferdev.my.id =====
+var API_KEY = 'fdv_-7rfdQtlvGEHLYt-UaBMGw';
 var chatHistory = [];
-var GEMINI_KEY = null;
 
-// Saat load, ambil key dari Supabase (diam-diam, tanpa pesan ke chat)
-async function loadGeminiKey() {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_gemini_key`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON}`,
-        'apikey': SUPABASE_ANON,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({})
-    });
-    const data = await res.json();
-    console.log('Supabase response:', data);
-    if (Array.isArray(data) && data.length > 0 && data[0].api_key) {
-      GEMINI_KEY = data[0].api_key;
-      console.log('✓ Gemini key berhasil dimuat');
-    } else if (data && data.api_key) {
-      GEMINI_KEY = data.api_key;
-      console.log('✓ Gemini key berhasil dimuat');
-    } else {
-      console.error('Key tidak ditemukan. Response:', JSON.stringify(data));
-    }
-  } catch (e) {
-    console.error('Gagal ambil key dari Supabase:', e.message);
-  }
-}
-loadGeminiKey();
+var SYSTEM = `Kamu adalah SkyBot, customer service AI dari SkyByte — penyedia internet unlimited di Cilaku Babakan.
+Informasi layanan SkyByte:
+- Paket 50Rb/bulan: Unlimited, speed max 30 Mbps (up & down), kabel 50m + router 2.4GHz, unlimited perangkat, gratis pemasangan
+- Paket 100Rb/bulan (TERBAIK): Unlimited, speed max 70 Mbps (up & down), kabel 50m + router 2.4GHz & 5GHz, unlimited perangkat, gratis pemasangan
+- Tanpa FUP, tanpa batasan kuota, kecepatan stabil
+- Pembayaran: QRIS (scan QR di app/website)
+- Kontak CS: WhatsApp 082295750165
+- Ada aplikasi My SkyByte APK untuk monitor penggunaan
+- Area layanan: Cilaku Babakan dan sekitarnya
+Cara bicara: ramah, santai tapi profesional, pakai bahasa Indonesia. Jawab singkat dan jelas. Kalau pertanyaan di luar layanan SkyByte, arahkan ke CS WhatsApp.`;
 
 function toggleChat() {
   var w = document.getElementById('chatWin');
@@ -1623,53 +1601,31 @@ async function sendMsg(override) {
   var text = override || input.value.trim();
   if (!text) return;
 
-  if (!GEMINI_KEY) {
-    // Coba tunggu sebentar kalau key masih loading
-    await new Promise(r => setTimeout(r, 2000));
-    if (!GEMINI_KEY) {
-      addMsg('bot', '❌ Gagal load konfigurasi. Hubungi admin via WhatsApp ya!');
-      return;
-    }
-  }
-
   input.value = '';
   addMsg('user', text);
-  chatHistory.push({ role: 'user', parts: [{ text: text }] });
 
   var typing = addMsg('bot typing', '⏳ SkyBot sedang mengetik...');
 
   try {
-    var res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{
-              text: `Kamu adalah SkyBot, customer service AI dari SkyByte — penyedia internet unlimited di Cilaku Babakan.
-
-Informasi layanan SkyByte:
-- Paket 50Rb/bulan: Unlimited, speed max 30 Mbps (up & down), kabel 50m + router 2.4GHz, unlimited perangkat, gratis pemasangan
-- Paket 100Rb/bulan (TERBAIK): Unlimited, speed max 70 Mbps (up & down), kabel 50m + router 2.4GHz & 5GHz, unlimited perangkat, gratis pemasangan
-- Tanpa FUP, tanpa batasan kuota, kecepatan stabil
-- Pembayaran: QRIS (scan QR di app/website)
-- Kontak CS: WhatsApp 082295750165
-- Ada aplikasi My SkyByte APK untuk monitor penggunaan
-- Area layanan: Cilaku Babakan dan sekitarnya
-
-Cara bicara: ramah, santai tapi profesional, pakai bahasa Indonesia. Jawab singkat dan jelas. Kalau pertanyaan di luar layanan SkyByte, arahkan ke CS WhatsApp.`
-            }]
-          },
-          contents: chatHistory
-        })
-      }
-    );
+    var res = await fetch('https://api.ferdev.my.id/gptlogic', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + API_KEY
+      },
+      body: JSON.stringify({
+        prompt: text,
+        logic: SYSTEM
+      })
+    });
     var data = await res.json();
-    if (data.error) throw new Error('Gemini: ' + data.error.message);
-    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error('Respons kosong');
-    var reply = data.candidates[0].content.parts[0].text;
-    chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+    console.log('API response:', data);
+
+    var reply = data.result || data.response || data.text ||
+                data.data?.result || data.data?.response || data.answer || null;
+
+    if (!reply) throw new Error('Format response tidak dikenal: ' + JSON.stringify(data));
+
     typing.className = 'msg bot';
     typing.innerHTML = reply.replace(/\n/g,'<br>');
   } catch(e) {
