@@ -1606,9 +1606,10 @@ async function sendMsg(override) {
 
   var typing = addMsg('bot typing', '⏳ SkyBot sedang mengetik...');
 
-  try {
-    var res = await fetch('https://api.ferdev.my.id/gptlogic', {
-      method: 'POST',
+    try {
+    // Pastikan URL endpoint sesuai dengan hasil test kamu (tambahkan /ai/)
+    var res = await fetch('https://api.ferdev.my.id/ai/gptlogic', {
+      method: 'POST', // Jika API ini ternyata wajib GET, kita harus ubah ke GET. Tapi coba POST dulu.
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + API_KEY
@@ -1621,7 +1622,8 @@ async function sendMsg(override) {
     var data = await res.json();
     console.log('API response:', data);
 
-    var reply = data.result || data.response || data.text ||
+    // Tambahkan data.message di urutan pertama
+    var reply = data.message || data.result || data.response || data.text ||
                 data.data?.result || data.data?.response || data.answer || null;
 
     if (!reply) throw new Error('Format response tidak dikenal: ' + JSON.stringify(data));
