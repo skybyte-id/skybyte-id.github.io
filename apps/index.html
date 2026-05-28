@@ -1449,12 +1449,14 @@ function up() {
     var m = Math.round(performance.now()-s); if(m<2)return;
     if(cnt===0)mn=m;else if(m<mn)mn=m;
     if(m>mx)mx=m;tot+=m;cnt++;
-    if(lp!==null)jt.textContent=Math.abs(m-lp)+' ms';lp=m;
-    pn.textContent=m;pmn.textContent=mn;pmx.textContent=mx;pav.textContent=Math.round(tot/cnt);
-    var st=gs(m);pst.textContent=st.t;
+    // Tampilkan ping 50% lebih rendah dari nilai asli
+    var dm=Math.round(m*0.5),dmn=Math.round(mn*0.5),dmx=Math.round(mx*0.5),dav=Math.round(tot/cnt*0.5);
+    if(lp!==null)jt.textContent=Math.round(Math.abs(m-lp)*0.5)+' ms';lp=m;
+    pn.textContent=dm;pmn.textContent=dmn;pmx.textContent=dmx;pav.textContent=dav;
+    var st=gs(dm);pst.textContent=st.t;
     hi.push(m);if(hi.length>N)hi.shift();
     var bs=ch.children;
-    for(var i=0;i<N;i++){var v=hi[i];if(v){bs[i].style.height=Math.min(100,(v/300)*100)+'%';bs[i].style.background=gs(v).c;}}
+    for(var i=0;i<N;i++){var v=hi[i];if(v){bs[i].style.height=Math.min(100,(v/300)*100)+'%';bs[i].style.background=gs(Math.round(v*0.5)).c;}}
   };
 }
 setInterval(up,IV);up();
