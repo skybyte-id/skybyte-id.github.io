@@ -1444,7 +1444,7 @@ function up() {
     sg.textContent = type;
   }
   var s = performance.now(), img = new Image();
-  img.src = 'https://connectivitycheck.gstatic.com/generate_204?t=' + s;
+  img.src = 'http://cp.cloudflare.com/generate_204?t=' + s;
   img.onload = img.onerror = function(){
     var m = Math.round(performance.now()-s); if(m<2)return;
     if(cnt===0)mn=m;else if(m<mn)mn=m;
