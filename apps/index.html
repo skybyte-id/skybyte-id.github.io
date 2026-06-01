@@ -559,7 +559,7 @@ var SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJl
 var _sb     = supabase.createClient(SB_URL, SB_KEY);
 
 // Kode admin — dicek secara lokal (tidak dikirim ke server)
-var ADMIN_CODE = 'inikatasandi'; // PERINGATAN: Keamanan Kritis! Seharusnya divalidasi di sisi server (Supabase RLS/Edge Function)
+var ADMIN_CODE = 'inikatasandi';
 
 // ============================================================
 //  NAMA BULAN
@@ -646,8 +646,8 @@ async function sbSavePayment(username, year, month) {
 }
 
 // Ambil semua antrian pembayaran (tanpa join, pakai 2 query terpisah)
-async function sbGetPendingPayment() {
-  var res = await _sb.from('pending_payment')
+async function sbGetPendingpayment() {
+  var res = await _sb.from('pending')
     .select('*')
     .order('created_at', { ascending: true });
   if (res.error) throw res.error;
@@ -670,7 +670,7 @@ async function sbGetPendingPayment() {
 async function sbCreatePendingPayment(username, year, month) {
   var layananRes = await sbGetLayanan(username);
   var amount = (layananRes.layanan && layananRes.layanan.paket === '100rb') ? 100000 : 50000;
-  var res = await _sb.from('pending_payment').upsert(
+  var res = await _sb.from('pending').upsert(
     { username: username, year: year, month: month, amount: amount, created_at: new Date().toISOString() },
     { onConflict: 'username,year,month' }
   );
@@ -680,7 +680,7 @@ async function sbCreatePendingPayment(username, year, month) {
 
 // Hapus dari antrian (setelah dikonfirmasi atau ditolak)
 async function sbDeletePendingPayment(username, year, month) {
-  var res = await _sb.from('pending_payment').delete()
+  var res = await _sb.from('pending').delete()
     .eq('username', username).eq('year', year).eq('month', month);
   if (res.error) throw res.error;
   return { success: true };
@@ -948,10 +948,7 @@ async function renderTagihan(user) {
       tglPasangDate = new Date();
     }
 
-    var targetDay = tglPasangDate.getDate();
-    var jatuhTempo = new Date(tglPasangDate.getFullYear(), tglPasangDate.getMonth() + 1, 1);
-    var lastDay = new Date(jatuhTempo.getFullYear(), jatuhTempo.getMonth() + 1, 0).getDate();
-    jatuhTempo.setDate(Math.min(targetDay, lastDay));
+    var jatuhTempo       = new Date(tglPasangDate.getFullYear(), tglPasangDate.getMonth() + 1, tglPasangDate.getDate());
     var tglJatuhTempoNum = jatuhTempo.getDate();
     var sisa             = Math.ceil((jatuhTempo - today) / (1000 * 60 * 60 * 24));
 
@@ -1069,7 +1066,7 @@ async function loadAntrianList() {
   listEl.innerHTML = '<div style="text-align:center;padding:14px;color:#7a95b0;font-size:12px"><div class="spin" style="margin:0 auto 8px;width:22px;height:22px;border-width:3px"></div>Memuat antrian...</div>';
 
   try {
-    var res     = await sbGetPendingPayment();
+    var res     = await sbGetPendingpayment();
     var pending = res.pending || [];
 
     var badge = document.getElementById('antrianBadge');
@@ -1446,7 +1443,7 @@ function up() {
     var type = conn.type === 'wifi' ? 'WIFI' : (conn.effectiveType || '--').toUpperCase();
     sg.textContent = type;
   }
-  var var s = performance.now(), img = new Image();
+  var s = performance.now(), img = new Image();
   img.src = 'https://cp.cloudflare.com/generate_204?t=' + s;
   img.onload = img.onerror = function(){
     var m = Math.round(performance.now()-s); if(m<2)return;
@@ -1639,7 +1636,6 @@ async function sendMsg(override) {
 
   input.value = '';
   addMsg('user', text);
-  chatHistory.push({role: 'user', content: text});
 
   var typing = addMsg('bot typing', '⏳ SkyBot sedang mengetik...');
 
@@ -1653,8 +1649,7 @@ async function sendMsg(override) {
       },
       body: JSON.stringify({
         prompt: text,
-        logic: SYSTEM,
-        history: chatHistory
+        logic: SYSTEM
       })
     });
     var data = await res.json();
@@ -1668,13 +1663,12 @@ async function sendMsg(override) {
 
     typing.className = 'msg bot';
     typing.innerHTML = reply.replace(/\n/g,'<br>');
-    chatHistory.push({role: 'assistant', content: reply});
   } catch(e) {
     typing.className = 'msg bot';
     typing.innerHTML = '⚠️ ' + e.message;
     console.error(e);
   }
-  var msgs = document.getElementById('chatMsgs'); if(msgs) msgs.scrollTop = msgs.scrollHeight;
+  document.getElementById('chatMsgs').scrollTop = 9999;
 }
 </script>
 </body>
